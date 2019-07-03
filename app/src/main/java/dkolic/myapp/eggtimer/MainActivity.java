@@ -1,6 +1,9 @@
 package dkolic.myapp.eggtimer;
 
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.os.CountDownTimer;
+
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -10,33 +13,55 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
-    int timeNumber;
+    TextView textView;
     SeekBar seekBar;
-    TextView timeDisplay;
+    boolean counterIsActive=false;
+    Button startStopButton;
+    CountDownTimer countDownTimer;
+      public void startTimer(View view){
+          if(counterIsActive){
+              textView.setText(String.valueOf(seekBar.getProgress()));
+              seekBar.setProgress(30);
+              seekBar.setEnabled(true);
+              countDownTimer.cancel();
+              startStopButton.setText("GO!");
+              counterIsActive=false;
+          }
+          else {
+              startStopButton = findViewById(R.id.startStopButton);
+              counterIsActive = true;
+              seekBar.setEnabled(false);
+              startStopButton.setText("STOP!");
+              countDownTimer=new CountDownTimer(seekBar.getProgress() * 1000, 1000) {
+                  @Override
+                  public void onTick(long millisUntilFinished) {
+                      long remainginTime = millisUntilFinished / 1000;
+                      updateTimer((int) remainginTime);
 
-    public void startTimer(View view) {
-        Button startStopButton = findViewById(R.id.startStopButton);
-        Log.i("Button is pressed", "idemo");
-        //SeekBar seekBar= findViewById(R.id.seekBar);
-        int time= seekBar.getProgress()*1000;
-        seekBar.setEnabled(false);
+                  }
+
+                  @Override
+                  public void onFinish() {
+                      MediaPlayer mediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.sound);
+                      mediaPlayer.start();
+
+                  }
+              }.start();
+          }
+      }
+      public void updateTimer (int secondsLeft){
+          int minutes = secondsLeft/60;
+          int seconds=secondsLeft-(minutes*60);
+          String secondsString = Integer.toString(seconds);
+          if(secondsString.equals("0")){
+              secondsString="00";
+          }
+
+          textView.setText(Integer.toString(minutes)+":"+secondsString);
+
+      }
 
 
-        CountDownTimer countDownTimer = new CountDownTimer(time,1000) {
-            @Override
-            public void onTick(long millisUntilFinished) {
-                Log.i("Timer", String.valueOf(millisUntilFinished/1000));
-                timeDisplay.setText(String.valueOf(millisUntilFinished/1000));
-            }
-
-            @Override
-            public void onFinish() {
-
-            }
-        }.start();
-
-
-    }
 
 
 
@@ -45,27 +70,18 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        seekBar=findViewById(R.id.seekBar);
+        textView=findViewById(R.id.timeDisplay);
+        textView.setText(String.valueOf(seekBar.getProgress()));
 
-        seekBar = findViewById(R.id.seekBar);
-        timeDisplay=findViewById(R.id.timeDisplay);
-
-        final int startingPosition = 30;
-        int max = 60;
+        int max=600;
         seekBar.setMax(max);
-        seekBar.setProgress(startingPosition);
-        Log.i("Button is pressed", "woho");
+        seekBar.setProgress(30);
 
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                int min = 1;
-                if (progress < min) {
-                    progress = min;
-                    seekBar.setProgress(min);
-                }
-                timeDisplay.setText(String.valueOf(progress));
-
-                Log.i("SeekBar state", String.valueOf(progress));
+            updateTimer(progress);
             }
 
             @Override
@@ -78,7 +94,6 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-
 
 
     }
